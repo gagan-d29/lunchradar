@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+
+# SQLite database (auto-created + auto-seeded on first boot)
+backend/data/
+*.db
+*.db-shm
+*.db-wal
+lunchradar.sql
+lunchradar-mysql.sql
+lunchradar-postgres.sql
+# Env & logs
+.env
+!.env.example
+*.log

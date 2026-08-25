@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,9 +6,41 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
-export const db = new Database(path.join(dataDir, 'lunchradar.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+/**
+ * SQLite driver with an automatic fallback:
+ *   1. better-sqlite3 (fast, prebuilt binaries; installed as an optional dep)
+ *   2. Node's built-in `node:sqlite` (Node >= 23.4 — zero install, so the app
+ *      still works even if the native module fails to build on Windows)
+ * Both expose the same small API used by this app: exec/pragma/prepare.
+ */
+async function loadDriver() {
+  try {
+    const mod = await import('better-sqlite3');
+    const db = new mod.default(path.join(dataDir, 'lunchradar.db'));
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
+    return db;
+  } catch (nativeErr) {
+    try {
+      const { DatabaseSync } = await import('node:sqlite');
+      const inner = new DatabaseSync(path.join(dataDir, 'lunchradar.db'));
+      inner.exec('PRAGMA journal_mode = WAL;');
+      inner.exec('PRAGMA foreign_keys = ON;');
+      console.warn('[db] better-sqlite3 not available — using Node\'s built-in node:sqlite driver (zero install).');
+      return {
+        exec: (sql) => inner.exec(sql),
+        pragma: (p) => inner.exec(`PRAGMA ${p};`),
+        prepare: (sql) => inner.prepare(sql),
+      };
+    } catch {
+      console.error('[db] No SQLite driver found. Did you run "npm install" inside the backend folder?');
+      console.error('[db] Underlying error:', nativeErr.message);
+      throw new Error('SQLite driver not found — run `npm install` in the backend/ folder.');
+    }
+  }
+}
+
+export const db = await loadDriver();
 
 // ---------------------------------------------------------------------------
 // Schema

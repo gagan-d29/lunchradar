@@ -1,5 +1,16 @@
 import jwt from 'jsonwebtoken';
 import { db } from './db.js';
+// In production, a missing JWT_SECRET must NOT silently fall back to a
+// hardcoded value — that value is public (it's in this source file on
+// GitHub), so anyone could forge admin tokens. Only allow the dev fallback
+// outside production.
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'JWT_SECRET environment variable is required in production. ' +
+    'Set it to a long, random value (e.g. `openssl rand -hex 32`).'
+  );
+}
+  
 
 export const JWT_SECRET = process.env.JWT_SECRET || 'lunchradar-dev-secret-change-me';
 
