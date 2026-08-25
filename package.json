@@ -1,0 +1,11 @@
+{
+  "name": "lunchradar",
+  "private": true,
+  "version": "1.0.0",
+  "description": "LunchRadar — find a lunch spot before your break ends (deployment root)",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "start": "npm --prefix backend run start",
+    "seed": "npm --prefix backend run seed"
+  }
+}

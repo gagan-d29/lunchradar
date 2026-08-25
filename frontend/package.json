@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node ensure-deps.js",
     "dev": "vite",
+    "prebuild": "node ensure-deps.js",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -87,6 +87,11 @@ cd ../backend && npm start        # Express serves API + built UI on :4000
 
 > Environment variables: `PORT` (backend), `VITE_API_URL` (frontend API base), `JWT_SECRET` (backend — set this in production!).
 
+**Which Node version?** Any recent LTS works (the app prefers **better-sqlite3**, an optional native module with prebuilt binaries). If that module can't be installed on your machine, the app **automatically falls back to Node's built-in SQLite driver** (`node:sqlite`, included in Node 23.4+/24) — no extra installs, nothing to configure. You'll just see a one-line notice in the backend terminal.
+
+**Windows tip:** make sure you run `npm install` *inside* `lunchradar/backend` before `npm start` — a missing install shows up as `ERR_MODULE_NOT_FOUND`.
+
+
 ---
 
 ## 🔑 Demo accounts
@@ -109,6 +114,65 @@ Reseed anytime with `node seed.js --force` (wipes and recreates the database).
 Shetty Lunch Home · Hotel Woodlands · Janata Deluxe · Hotel Taj Mahal · Chutney (Deepa Comforts) · Madhuvan Veg · Udupi Sri Krishna Bhavan · City Canteen · The Cochin Village · Hamburg · Darjeeling Momos · Machli · Guru Purnima Lunch Home · Pabbas · + 2 pending submissions to try out the admin flow.
 
 Two spots are seeded as **pending** (Boon Relish, Kamath Food Express) so you can experience the approval flow immediately.
+
+---
+
+## 🗄 The database (no SQL software needed!)
+
+LunchRadar uses **SQLite** — it is not a database *server*, it's a tiny engine embedded **inside the app itself**. There is nothing to install, nothing to configure, no username/password. The entire database is just **one file**:
+
+```
+backend/data/lunchradar.db    ← created automatically by `npm run seed` (or on first boot)
+```
+
+It holds 3 tables: `users` (accounts + roles), `spots` (eateries + status), `reports` (live crowd reports). Delete the `.db` file anytime to start fresh — the seed recreates it.
+
+**Want to look inside it?** (optional — the app + admin dashboard already do everything, but it's great for debugging and viva demos)
+
+| Tool | What it is |
+|---|---|
+| [DB Browser for SQLite](https://sqlitebrowser.org) — *recommended* | Free GUI. Open the `.db` file like Excel: browse tables, run `SELECT` queries, export CSV |
+| VS Code extension "SQLite Viewer" | Open the `.db` file right inside VS Code (if you use it) |
+| DBeaver Community | Free, heavier — only if you already use it |
+| Node one-liner (no install) | `node -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('backend/data/lunchradar.db');console.log(d.prepare('SELECT * FROM spots LIMIT 5').all())"` |
+
+> ⚠️ The `.db` file is **excluded from the zip** (it's recreated on first run). Also note: a SQLite file is locked while the backend is running — close the app or stop the server before opening it in a GUI tool.
+
+### Export the data to any database
+
+From `backend/`:
+
+```bash
+npm run export        # writes 4 files into the project root:
+                      #   lunchradar.db            binary SQLite
+                      #   lunchradar.sql           SQLite text dump
+                      #   lunchradar-mysql.sql     MySQL / MariaDB dump
+                      #   lunchradar-postgres.sql  PostgreSQL dump
+```
+
+**Import the MySQL dump** (create an empty database first):
+
+```bash
+mysql -u root -p lunchradar < lunchradar-mysql.sql
+```
+
+**Import the PostgreSQL dump:**
+
+```bash
+createdb lunchradar && psql lunchradar < lunchradar-postgres.sql
+```
+
+All dumps contain the same data: schema (CREATE TABLE) + all rows (INSERTs). Run these queries in any of them:
+
+```sql
+-- All approved spots, cheapest first
+SELECT name, area, cuisine, price, walk_minutes FROM spots WHERE status='approved' ORDER BY price;
+-- Crowd history
+SELECT status, crowd, COUNT(*) AS reports FROM reports GROUP BY status, crowd;
+-- Latest live reports with spot names
+SELECT s.name, r.status, r.crowd, r.wait_minutes, r.created_at
+FROM reports r JOIN spots s ON s.id = r.spot_id ORDER BY r.id DESC LIMIT 10;
+```
 
 ---
 

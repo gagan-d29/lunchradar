@@ -1,0 +1,15 @@
+# Render Blueprint — deploys LunchRadar to https://lunchradar.onrender.com
+# Push this repo to GitHub, then in Render: "New → Blueprint" and pick the repo.
+services:
+  - type: web
+    name: lunchradar
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.1
+      - key: JWT_SECRET
+        generateValue: true
