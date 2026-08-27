@@ -202,3 +202,6 @@ FROM reports r JOIN spots s ON s.id = r.spot_id ORDER BY r.id DESC LIMIT 10;
 - Report streaks & karma badges for reliable reporters
 - Photo uploads, menus, and per-dish recommendations
 - Cafeteria vs. off-campus toggle, Friday-special filters
+
+-I will work on the version 2 very soon 
+
